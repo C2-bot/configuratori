@@ -1976,8 +1976,10 @@
                     timestamp: new Date().toISOString(),
                     timestampReadable: new Date().toLocaleString('it-IT'),
                     
-                    // TUTTE le workstation consigliate
+                    // Numero totale di workstation trovate
                     numeroWorkstationTrovate: results.length,
+                    
+                    // Array completo di TUTTE le workstation consigliate
                     workstations: results.map(ws => ({
                         nome: ws.name,
                         codice: ws.id,
@@ -1993,22 +1995,6 @@
                         pros: ws.pros
                     }))
                 };
-                
-                // Aggiungi anche campi separati per le prime 5 workstation (per facilitare la mappatura in Zapier)
-                results.slice(0, 5).forEach((ws, index) => {
-                    const num = index + 1;
-                    zapierData[`ws${num}_nome`] = ws.name;
-                    zapierData[`ws${num}_codice`] = ws.id;
-                    zapierData[`ws${num}_processore`] = ws.processor;
-                    zapierData[`ws${num}_ram`] = ws.ram;
-                    zapierData[`ws${num}_storage`] = ws.storage;
-                    zapierData[`ws${num}_gpu`] = ws.gpu;
-                    zapierData[`ws${num}_gpuMemory`] = ws.gpuMemory;
-                    zapierData[`ws${num}_garanzia`] = ws.warranty;
-                    zapierData[`ws${num}_prezzoUnitario`] = ws.price;
-                    zapierData[`ws${num}_prezzoTotale`] = ws.price * config.quantity;
-                    zapierData[`ws${num}_pros`] = ws.pros;
-                });
 
                 // Disabilita il pulsante durante l'invio
                 const saveButton = document.querySelector('.btn-save');
@@ -2018,9 +2004,12 @@
                 }
 
                 try {
-                    // Invia a Zapier
+                    // Invia a Zapier con header corretto
                     const response = await fetch('https://hooks.zapier.com/hooks/catch/13606099/u8wl4sw/', {
                         method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
                         body: JSON.stringify(zapierData)
                     });
 
