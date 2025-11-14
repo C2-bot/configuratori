@@ -2057,6 +2057,9 @@
                 }
 
                 try {
+                    // Log per debug (rimuovibile dopo il test)
+                    console.log('Dati da inviare a Zapier:', zapierData);
+                    
                     // Invia a Zapier con header corretto
                     const response = await fetch('https://hooks.zapier.com/hooks/catch/13606099/u8wl4sw/', {
                         method: 'POST',
@@ -2066,6 +2069,8 @@
                         body: JSON.stringify(zapierData)
                     });
 
+                    console.log('Response status:', response.status);
+                    
                     if (response.ok) {
                         // Successo!
                         alert('✅ Configurazione inviata con successo!\n\nRiceverai un\'email con tutti i dettagli.');
@@ -2073,6 +2078,8 @@
                         // Reset email field
                         setUserEmail('');
                     } else {
+                        const errorText = await response.text();
+                        console.error('Response error:', errorText);
                         throw new Error('Errore durante l\'invio');
                     }
                 } catch (error) {
