@@ -1936,8 +1936,10 @@
                     return;
                 }
 
-                const selectedWs = results[0];
-                if (!selectedWs) return;
+                if (!results || results.length === 0) {
+                    alert('⚠️ Nessuna workstation trovata con i criteri selezionati');
+                    return;
+                }
 
                 const labTypeName = labTypes.find(l => l.id === config.labType)?.name || 'Non specificato';
                 
@@ -1957,20 +1959,6 @@
                     tipoLaboratorioId: config.labType,
                     quantita: config.quantity,
                     budgetPerMacchina: config.budget,
-                    budgetTotale: selectedWs.price * config.quantity,
-                    
-                    // Workstation consigliata
-                    workstationNome: selectedWs.name,
-                    workstationCodice: selectedWs.id,
-                    workstationProcessore: selectedWs.processor,
-                    workstationRam: selectedWs.ram,
-                    workstationRamType: selectedWs.ramType || 'DDR5',
-                    workstationStorage: selectedWs.storage,
-                    workstationGpu: selectedWs.gpu,
-                    workstationGpuMemory: selectedWs.gpuMemory,
-                    workstationGaranzia: selectedWs.warranty,
-                    workstationPrezzoUnitario: selectedWs.price,
-                    workstationPrezzoTotale: selectedWs.price * config.quantity,
                     
                     // Utilizzi selezionati
                     utilizzi: config.uses.join(', '),
@@ -1986,8 +1974,41 @@
                     
                     // Timestamp
                     timestamp: new Date().toISOString(),
-                    timestampReadable: new Date().toLocaleString('it-IT')
+                    timestampReadable: new Date().toLocaleString('it-IT'),
+                    
+                    // TUTTE le workstation consigliate
+                    numeroWorkstationTrovate: results.length,
+                    workstations: results.map(ws => ({
+                        nome: ws.name,
+                        codice: ws.id,
+                        processore: ws.processor,
+                        ram: ws.ram,
+                        ramType: ws.ramType || 'DDR5',
+                        storage: ws.storage,
+                        gpu: ws.gpu,
+                        gpuMemory: ws.gpuMemory,
+                        garanzia: ws.warranty,
+                        prezzoUnitario: ws.price,
+                        prezzoTotale: ws.price * config.quantity,
+                        pros: ws.pros
+                    }))
                 };
+                
+                // Aggiungi anche campi separati per le prime 5 workstation (per facilitare la mappatura in Zapier)
+                results.slice(0, 5).forEach((ws, index) => {
+                    const num = index + 1;
+                    zapierData[`ws${num}_nome`] = ws.name;
+                    zapierData[`ws${num}_codice`] = ws.id;
+                    zapierData[`ws${num}_processore`] = ws.processor;
+                    zapierData[`ws${num}_ram`] = ws.ram;
+                    zapierData[`ws${num}_storage`] = ws.storage;
+                    zapierData[`ws${num}_gpu`] = ws.gpu;
+                    zapierData[`ws${num}_gpuMemory`] = ws.gpuMemory;
+                    zapierData[`ws${num}_garanzia`] = ws.warranty;
+                    zapierData[`ws${num}_prezzoUnitario`] = ws.price;
+                    zapierData[`ws${num}_prezzoTotale`] = ws.price * config.quantity;
+                    zapierData[`ws${num}_pros`] = ws.pros;
+                });
 
                 // Disabilita il pulsante durante l'invio
                 const saveButton = document.querySelector('.btn-save');
