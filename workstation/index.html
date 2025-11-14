@@ -1930,7 +1930,7 @@
                 });
             };
 
-            const sendConfigurationEmail = () => {
+            const sendConfigurationEmail = async () => {
                 if (!userEmail || !userEmail.includes('@')) {
                     alert('⚠️ Inserisci un indirizzo email valido');
                     return;
@@ -1943,61 +1943,85 @@
                 
                 // Recupera i nomi dei software selezionati
                 const allSoftware = Object.values(softwareDatabase).flat();
-                const softwareNames = config.selectedSoftware
+                const softwareList = config.selectedSoftware
                     .map(swId => allSoftware.find(s => s.id === swId)?.name)
-                    .filter(Boolean)
-                    .join('\n- ');
+                    .filter(Boolean);
 
-                const emailSubject = 'Configurazione Laboratorio C2 Group';
-                const emailBody = `
-CONFIGURAZIONE LABORATORIO C2 GROUP
-═══════════════════════════════════
+                // Prepara i dati per Zapier
+                const zapierData = {
+                    // Informazioni utente
+                    email: userEmail,
+                    
+                    // Configurazione laboratorio
+                    tipoLaboratorio: labTypeName,
+                    tipoLaboratorioId: config.labType,
+                    quantita: config.quantity,
+                    budgetPerMacchina: config.budget,
+                    budgetTotale: selectedWs.price * config.quantity,
+                    
+                    // Workstation consigliata
+                    workstationNome: selectedWs.name,
+                    workstationCodice: selectedWs.id,
+                    workstationProcessore: selectedWs.processor,
+                    workstationRam: selectedWs.ram,
+                    workstationRamType: selectedWs.ramType || 'DDR5',
+                    workstationStorage: selectedWs.storage,
+                    workstationGpu: selectedWs.gpu,
+                    workstationGpuMemory: selectedWs.gpuMemory,
+                    workstationGaranzia: selectedWs.warranty,
+                    workstationPrezzoUnitario: selectedWs.price,
+                    workstationPrezzoTotale: selectedWs.price * config.quantity,
+                    
+                    // Utilizzi selezionati
+                    utilizzi: config.uses.join(', '),
+                    
+                    // Software selezionato
+                    software: softwareList.join(', '),
+                    softwareCount: softwareList.length,
+                    
+                    // Flags speciali
+                    aiNeeded: config.aiNeeded,
+                    cadNeeded: config.cadNeeded,
+                    certifiedNeeded: config.certifiedNeeded,
+                    
+                    // Timestamp
+                    timestamp: new Date().toISOString(),
+                    timestampReadable: new Date().toLocaleString('it-IT')
+                };
 
-📋 INFORMAZIONI GENERALI
-────────────────────────
-Tipo Laboratorio: ${labTypeName}
-Quantità Workstation: ${config.quantity}
-Budget per Macchina: €${config.budget}
+                // Disabilita il pulsante durante l'invio
+                const saveButton = document.querySelector('.btn-save');
+                if (saveButton) {
+                    saveButton.disabled = true;
+                    saveButton.textContent = '⏳ Invio in corso...';
+                }
 
-🖥️ WORKSTATION CONSIGLIATA
-────────────────────────
-Modello: ${selectedWs.name}
-Codice: ${selectedWs.id}
+                try {
+                    // Invia a Zapier
+                    const response = await fetch('https://hooks.zapier.com/hooks/catch/13606099/u8wl4sw/', {
+                        method: 'POST',
+                        body: JSON.stringify(zapierData)
+                    });
 
-Specifiche Tecniche:
-• Processore: ${selectedWs.processor}
-• RAM: ${selectedWs.ram}GB DDR5${selectedWs.ramType === 'ECC' ? ' ECC' : ''}
-• Storage: ${selectedWs.storage}
-• GPU: ${selectedWs.gpu}${selectedWs.gpuMemory > 0 ? ' ' + selectedWs.gpuMemory + 'GB' : ''}
-• Garanzia: ${selectedWs.warranty}
-
-💰 PREVENTIVO
-────────────────────────
-Prezzo Unitario: €${selectedWs.price.toLocaleString()} + IVA
-Quantità: ${config.quantity} unità
-TOTALE: €${(selectedWs.price * config.quantity).toLocaleString()} + IVA
-
-${config.selectedSoftware.length > 0 ? `💾 SOFTWARE RICHIESTO
-────────────────────────
-- ${softwareNames}
-
-Nota: Il software non è incluso nel prezzo delle workstation.` : ''}
-
-📞 CONTATTI
-────────────────────────
-Per ricevere un preventivo dettagliato o
-per ulteriori informazioni, contattaci:
-
-Email: scuole@c2group.it
-Web: www.c2group.it
-
-──────────────────────────────────────
-Questa configurazione è stata generata
-automaticamente dal Configuratore C2 Group
-                `.trim();
-
-                const mailtoLink = `mailto:${userEmail}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
-                window.location.href = mailtoLink;
+                    if (response.ok) {
+                        // Successo!
+                        alert('✅ Configurazione inviata con successo!\n\nRiceverai un\'email con tutti i dettagli.');
+                        
+                        // Reset email field
+                        setUserEmail('');
+                    } else {
+                        throw new Error('Errore durante l\'invio');
+                    }
+                } catch (error) {
+                    console.error('Errore invio a Zapier:', error);
+                    alert('❌ Errore durante l\'invio della configurazione.\n\nRiprova tra qualche istante o contattaci direttamente a scuole@c2group.it');
+                } finally {
+                    // Riabilita il pulsante
+                    if (saveButton) {
+                        saveButton.disabled = false;
+                        saveButton.innerHTML = '<span>💾</span> Salva Configurazione';
+                    }
+                }
             };
 
             const calculateRecommendations = () => {
