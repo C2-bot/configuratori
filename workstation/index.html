@@ -2060,12 +2060,9 @@
                     // Log per debug (rimuovibile dopo il test)
                     console.log('Dati da inviare a Zapier:', zapierData);
                     
-                    // Invia a Zapier con header corretto
+                    // Invia a Zapier SENZA header Content-Type per evitare CORS preflight
                     const response = await fetch('https://hooks.zapier.com/hooks/catch/13606099/u8wl4sw/', {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
                         body: JSON.stringify(zapierData)
                     });
 
