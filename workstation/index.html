@@ -2161,6 +2161,9 @@
                     alert('⚠️ Nessuna workstation trovata con i criteri selezionati');
                     return;
                 }
+                
+                // Assicura che recommendedMonitors sia un array
+                const safeMonitors = Array.isArray(recommendedMonitors) ? recommendedMonitors : [];
 
                 const labTypeName = labTypes.find(l => l.id === config.labType)?.name || 'Non specificato';
                 
@@ -2218,18 +2221,18 @@
                     })),
                     
                     // Monitor raccomandati
-                    numeroMonitorRaccomandati: recommendedMonitors.length,
-                    monitors: recommendedMonitors.map(mon => ({
-                        nome: mon.name,
-                        codice: mon.id,
-                        marca: mon.brand,
-                        dimensione: mon.size,
-                        risoluzione: mon.resolution,
-                        pannello: mon.panel,
-                        prezzoUnitario: mon.price,
-                        prezzoTotale: mon.price * config.quantity,
-                        caratteristiche: mon.features.join(', '),
-                        pros: mon.pros,
+                    numeroMonitorRaccomandati: safeMonitors.length,
+                    monitors: safeMonitors.map(mon => ({
+                        nome: mon.name || '',
+                        codice: mon.id || '',
+                        marca: mon.brand || '',
+                        dimensione: mon.size || 0,
+                        risoluzione: mon.resolution || '',
+                        pannello: mon.panel || '',
+                        prezzoUnitario: mon.price || 0,
+                        prezzoTotale: (mon.price || 0) * config.quantity,
+                        caratteristiche: (mon.features || []).join(', '),
+                        pros: mon.pros || '',
                         linkProdotto: mon.productUrl || ''
                     }))
                 };
@@ -2243,7 +2246,9 @@
 
                 try {
                     // Log per debug (rimuovibile dopo il test)
-                    console.log('Dati da inviare a Zapier:', zapierData);
+                    console.log('📊 Workstations:', results.length);
+                    console.log('🖥️ Monitor:', safeMonitors.length);
+                    console.log('📦 Dati completi da inviare:', zapierData);
                     
                     // Invia a Zapier SENZA header Content-Type per evitare CORS preflight
                     const response = await fetch('https://hooks.zapier.com/hooks/catch/13606099/u8wl4sw/', {
